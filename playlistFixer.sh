@@ -35,7 +35,7 @@ cat "$1" | while read line; do #Read each line of the playlist file
 		echo new- $replacement
 		echo
 
-		#Escaoe special characters in variables to be used with sed
+		#Escape special characters in variables to be used with sed
 		line="$(<<< "$line" sed -e 's`[][&\\/.*^$]`\\&`g')"
 		replacement="$(<<< "$replacement" sed -e 's`[][&\\/.*^$]`\\&`g')"
 
