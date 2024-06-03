@@ -4,16 +4,22 @@
 #This script doesn't seem to work on NFS shares because of sed's use of temp files
 
 #Search for file without extension ($2) in directory ($1)
-#If it's not found there, then search in the root Music folder
+#Then search in the parent dir without the disc/track number
+#Then search in the root Music dir
+#Realpath is used to reduce any funny-business when using .. (eg. dir1/../dir1/file.mp3)
 function Ffind {
-	find "$1" -type f -iname "$2.*" 2> /dev/null
-	if [ $? -ne 0 ]; then
-		find .. -type f -iname "$2.*"
+	result=$(find "$1" -type f -iname "$2.*" 2> /dev/null)
+	if [[ -z $result ]]; then
+		result=$(find "$1"/.. -type f -iname "*$(echo $2 | cut -d ' ' -f 2-).*")
 	fi
+	if [[ -z $result ]]; then
+		result=$(find .. -type f -iname "$2.*")
+	fi
+	realpath -s --relative-to=. "$result" 2>/dev/null
 }
 
 #check if script was run with an argument
-if [ ! "$1" ]; then echo "Script needs a playlist argument" && exit 1; fi
+if [ ! "$1" ]; then echo "Script needs a playlist argument"; exit 1; fi
 
 cat "$1" | while read line; do #Read each line of the playlist file
 	if [ ! -f "$line" ]; then #If the file doesn't exist
@@ -25,7 +31,7 @@ cat "$1" | while read line; do #Read each line of the playlist file
 
 		#Check if the function did not return anything
 		if [ ! "$replacement" ]; then
-			echo "Error: File not found"
+			echo "Error: Could not find $filename"
 			echo $line 
 			echo
 			continue
